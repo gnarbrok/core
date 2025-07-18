@@ -345,7 +345,7 @@ struct cthunTentacle : public ScriptedAI
     {
         m_pInstance = dynamic_cast<instance_temple_of_ahnqiraj*>(pCreature->GetInstanceData());
         if (!m_pInstance)
-            sLog.outError("C'thun tentacle could not find it's instance");
+            sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "C'thun tentacle could not find it's instance");
 
         SetCombatMovement(false);
         defaultOrientation = m_creature->GetOrientation();
@@ -353,7 +353,7 @@ struct cthunTentacle : public ScriptedAI
 
     void Reset() override
     {
-        m_creature->AddUnitState(UNIT_STAT_ROOT);
+        m_creature->AddUnitState(UNIT_STATE_ROOT);
         m_creature->StopMoving();
         m_creature->SetRooted(true);
         m_creature->SetInCombatWithZone();
@@ -374,7 +374,7 @@ struct cthunTentacle : public ScriptedAI
                 tmpS->UnSummon();
             }
             else {
-                sLog.outError("CThunTentacle could not cast creature to TemporarySummon*");
+                sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "CThunTentacle could not cast creature to TemporarySummon*");
             }
             //EnterEvadeMode();
             //m_creature->OnLeaveCombat();
@@ -384,7 +384,7 @@ struct cthunTentacle : public ScriptedAI
 
         // This makes the mob behave like frostnovaed mobs etc, that is,
         // retargetting another top-threat target if current leaves melee range
-        m_creature->AddUnitState(UNIT_STAT_ROOT);
+        m_creature->AddUnitState(UNIT_STATE_ROOT);
         m_creature->StopMoving();
         m_creature->SetRooted(true);
         return true;
@@ -435,7 +435,7 @@ struct cthunTentacle : public ScriptedAI
             if (!caster)
                 continue;
 
-            if (caster->IsInMap(m_creature) && caster->IsTargetable(true, false) && m_creature->CanReachWithMeleeAutoAttack(caster))
+            if (caster->IsInMap(m_creature) && caster->IsTargetableBy(m_creature) && m_creature->CanReachWithMeleeAutoAttack(caster))
             {
                 target = caster;
                 break;
@@ -470,7 +470,7 @@ struct cthunTentacle : public ScriptedAI
         if (target)
         {
             // Nostalrius : Correction bug sheep/fear
-            if (!m_creature->HasUnitState(UNIT_STAT_STUNNED | UNIT_STAT_PENDING_STUNNED | UNIT_STAT_FEIGN_DEATH | UNIT_STAT_CONFUSED | UNIT_STAT_FLEEING) 
+            if (!m_creature->HasUnitState(UNIT_STATE_STUNNED | UNIT_STATE_PENDING_STUNNED | UNIT_STATE_FEIGN_DEATH | UNIT_STATE_CONFUSED | UNIT_STATE_FLEEING) 
                 && (!m_creature->HasAuraType(SPELL_AURA_MOD_FEAR) || m_creature->HasAuraType(SPELL_AURA_PREVENTS_FLEEING)) && !m_creature->HasAuraType(SPELL_AURA_MOD_CONFUSE))
             {
                 m_creature->SetInFront(target);
@@ -501,7 +501,7 @@ public:
             FixPortalPosition();
         }
         else {
-            sLog.outError("cthunPortalTentacle failed to spawn portal with entry %d", portalId);
+            sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "cthunPortalTentacle failed to spawn portal with entry %d", portalId);
         }
     }
 
@@ -512,7 +512,7 @@ public:
                 portalGuid = 0;
             }
             else {
-                sLog.outError("Unable to despawn cthunPortalTentacle portal, could not cast to temporarySummon*");
+                sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "Unable to despawn cthunPortalTentacle portal, could not cast to temporarySummon*");
             }
         }
     }
@@ -570,7 +570,7 @@ public:
         case MOB_GIANT_PORTAL: radius = 8.0f; break;
         default:
             radius = 3.0f;
-            sLog.outError("C'thun FixPortalPosition unknown portalID %d", portalEntry);
+            sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "C'thun FixPortalPosition unknown portalID %d", portalEntry);
         }
         //Searching for best z-coordinate to place the portal
         float centerX = m_creature->GetPositionX();
@@ -659,7 +659,7 @@ struct clawTentacle : public cthunPortalTentacle
             return false;
             break;
         default:
-            sLog.outError("Unknown UpdateClawTentacle state.");
+            sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "Unknown UpdateClawTentacle state.");
             return false;
         }
     }
@@ -925,11 +925,8 @@ struct giant_eye_tentacleAI : public cthunPortalTentacle
                 if (Player* target = SelectRandomAliveNotStomach(m_pInstance)) {
                     // need to check if we can cast before doing so, because if we update target
                     // after initiating the cast, the cast animation dissapear for some reason
-                    if (CanCastSpell(target, sSpellMgr.GetSpellEntry(SPELL_GREEN_EYE_BEAM), false) == CanCastResult::CAST_OK) {
+                    if (DoCastSpellIfCan(target, SPELL_GREEN_EYE_BEAM) == SpellCastResult::SPELL_CAST_OK) {
                         beamTargetGuid = target->GetObjectGuid();
-                        m_creature->SetTargetGuid(target->GetObjectGuid());
-                        m_creature->SetFacingToObject(target);
-                        m_creature->CastSpell(target, SPELL_GREEN_EYE_BEAM, false);
                         isCasting = true;
                         BeamTimer = GIANT_EYE_BEAM_COOLDOWN;
                     }
@@ -1021,7 +1018,7 @@ struct eye_of_cthunAI : public ScriptedAI
 
         m_pInstance = dynamic_cast<instance_temple_of_ahnqiraj*>(pCreature->GetInstanceData());
         if (!m_pInstance)
-            sLog.outError("SD0: No Instance eye_of_cthunAI");
+            sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "SD0: No Instance eye_of_cthunAI");
 
         Reset();
     }
@@ -1064,7 +1061,7 @@ struct eye_of_cthunAI : public ScriptedAI
             RemoveGlarePhaseSpells();
         }
         else {
-            sLog.outError("eye_of_cthunAI: Reset called, but m_creature does not exist.");
+            sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "eye_of_cthunAI: Reset called, but m_creature does not exist.");
         }
     }
 
@@ -1125,7 +1122,7 @@ struct eye_of_cthunAI : public ScriptedAI
             }
             break;
         default:
-            sLog.outError("CThun eye update called with incorrect state: %d", currentPhase);
+            sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "CThun eye update called with incorrect state: %d", currentPhase);
         }
     }
     
@@ -1254,7 +1251,7 @@ struct cthunAI : public ScriptedAI
 
         m_pInstance = (instance_temple_of_ahnqiraj*)pCreature->GetInstanceData();
         if (!m_pInstance)
-            sLog.outError("SD0: No Instance for cthunAI");
+            sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "SD0: No Instance for cthunAI");
 
         if (Creature* pPortal = DoSpawnCreature(MOB_CTHUN_PORTAL, 0.0f, 0.0f, 0.0f, 0.0f, TEMPSUMMON_CORPSE_DESPAWN, 0)) {
             pPortal->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE | UNIT_FLAG_SPAWNING);
@@ -1268,7 +1265,7 @@ struct cthunAI : public ScriptedAI
         if (!m_creature->IsInCombat()) {
             Creature* pEye = m_pInstance->GetCreature(eyeGuid);
             if (!pEye) {
-                sLog.outError("cthunAI::AggroRadius could not find pEye");
+                sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "cthunAI::AggroRadius could not find pEye");
                 return;
             }
             eye_of_cthunAI* eyeAI = (eye_of_cthunAI*)pEye->AI();
@@ -1381,7 +1378,7 @@ struct cthunAI : public ScriptedAI
                 eyeGuid = pEye->GetGUID();
             }
             else {
-                sLog.outError("C'thun was unable to summon it's eye");
+                sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "C'thun was unable to summon it's eye");
             }
         }
     }
@@ -1403,7 +1400,7 @@ struct cthunAI : public ScriptedAI
     {
         if (pCreature->GetEntry() == MOB_FLESH_TENTACLE) {
             if (fleshTentacles.size() > 1) {
-                sLog.outError("Flesh tentacle summoned, but there are already %i tentacles up.", fleshTentacles.size());
+                sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "Flesh tentacle summoned, but there are already %i tentacles up.", fleshTentacles.size());
             }
             fleshTentacles.push_back(pCreature->GetGUID());
         }
@@ -1485,7 +1482,7 @@ struct cthunAI : public ScriptedAI
 
             break;
         default:
-            sLog.outError("C'Thun in bugged state: %i", currentPhase);
+            sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "C'Thun in bugged state: %i", currentPhase);
         }
     }
     
@@ -1661,7 +1658,7 @@ struct cthunAI : public ScriptedAI
     void SpawnFleshTentacles() {
 
         if (!fleshTentacles.empty()) {
-            sLog.outError("SpawnFleshTentacles() called, but there are already %i tentacles up.", fleshTentacles.size());
+            sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "SpawnFleshTentacles() called, but there are already %i tentacles up.", fleshTentacles.size());
         }
         //Spawn 2 flesh tentacles in C'thun stomach
         for (const auto& fleshTentaclePosition : fleshTentaclePositions)
@@ -1758,7 +1755,7 @@ struct cthunAI : public ScriptedAI
             if (Unit* target = SelectRandomAliveNotStomach(m_pInstance))
             {
                 if (target->GetPositionZ() < -30.0f) {
-                    sLog.outError("Cthun trying to spawn %i <-30.0f", id);
+                    sLog.Out(LOG_SCRIPTS, LOG_LVL_ERROR, "Cthun trying to spawn %i <-30.0f", id);
                 }
                 float x;
                 float y;
